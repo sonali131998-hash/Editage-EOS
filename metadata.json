@@ -1,0 +1,6 @@
+{
+  "name": "Editage Online System (EOS) - Research Journey Dashboard",
+  "description": "Next-generation personalized research journey dashboard for Editage Online System, guiding researchers from manuscript upload to publication.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
