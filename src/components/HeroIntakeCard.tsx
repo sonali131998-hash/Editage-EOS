@@ -14,7 +14,10 @@ import {
   FileCheck,
   CheckCircle2,
   Clock,
-  HelpCircle
+  HelpCircle,
+  BookOpen,
+  Award,
+  ShieldCheck
 } from 'lucide-react';
 
 interface HeroIntakeCardProps {
@@ -50,12 +53,10 @@ export const HeroIntakeCard: React.FC<HeroIntakeCardProps> = ({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Mode for the card: 'initial' | 'questions' | 'uploaded'
+  // Accordion for "Not ready to upload"
   const [showQuestions, setShowQuestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-
-  const isReturningUser = currentState === 'STATE_C';
 
   // Close search dropdown on click outside
   useEffect(() => {
@@ -86,21 +87,62 @@ export const HeroIntakeCard: React.FC<HeroIntakeCardProps> = ({
           s.cat.toLowerCase().includes(searchQuery.toLowerCase())
       );
 
-  const stages = [
-    { id: 'writing', label: 'Still writing', desc: 'Drafting initial sections' },
-    { id: 'complete', label: 'Manuscript is complete', desc: 'Full draft ready for review' },
-    { id: 'presubmission', label: 'Preparing for submission', desc: 'Targeting journal & formatting' },
-    { id: 'revisions', label: 'Revisions requested', desc: 'Responding to peer review' },
-    { id: 'rejected', label: 'Rejected / Re-submitting', desc: 'Restructuring for new journal' },
+  // REDUCED TO 2 SHARP QUESTIONS WITH APT SUGGESTIONS:
+  // Question 1: Publishing Priorities
+  const publishingGoals = [
+    {
+      id: 'scientific_rigor',
+      title: 'Scientific Rigor & Deep Review',
+      tag: 'Most Popular',
+      desc: '2 PhD subject specialists critique methodology, structure & logic',
+      helpValue: 'Improve scientific clarity',
+      stageValue: 'complete',
+      aptService: 'Premium Scientific Editing',
+      aptRationale: 'Two subject-area PhD editors check scientific validity, flow, and terminology + 365 days of free re-editing.',
+    },
+    {
+      id: 'journal_selection',
+      title: 'Target Journal Fit & Formatting',
+      tag: 'Pre-Submission',
+      desc: 'Select matched Q1/Q2 indexed journals & align author guidelines',
+      helpValue: 'Choose the right journal',
+      stageValue: 'presubmission',
+      aptService: 'Journal Selection & Submission Readiness',
+      aptRationale: 'Shortlists high-probability journals matching your study scope and eliminates technical formatting desk rejections.',
+    },
+    {
+      id: 'language_flow',
+      title: 'English Language & Academic Tone',
+      tag: 'Fast Turnaround',
+      desc: 'Polish grammar, sentence flow, vocabulary & native phrasing',
+      helpValue: 'Improve English and readability',
+      stageValue: 'complete',
+      aptService: 'Advanced English Editing',
+      aptRationale: 'Ensures clear, publication-grade academic English reviewed by native English editors in your field.',
+    },
+    {
+      id: 'peer_review_revisions',
+      title: 'Revisions & Reviewer Comments',
+      tag: 'Post-Review',
+      desc: 'Respond to reviewer critique & revise draft for resubmission',
+      helpValue: 'Respond to reviewer comments',
+      stageValue: 'revisions',
+      aptService: 'Post-Review Revision Support',
+      aptRationale: 'Reviews your point-by-point rebuttal letter and edits the revised manuscript to satisfy journal referees.',
+    },
   ];
 
-  const helpGoals = [
-    'Improve English and readability',
-    'Improve scientific clarity',
-    'Choose the right journal',
-    'Check formatting and references',
-    'Create figures / graphical abstract',
-    'Respond to reviewer comments',
+  // Derive current goal from selectedHelp / selectedStage
+  const currentGoal = publishingGoals.find(
+    (g) => g.helpValue === selectedHelp || (g.id === 'journal_selection' && selectedStage === 'presubmission')
+  ) || publishingGoals[0];
+
+  // Question 2: Scope pills
+  const scopePills = [
+    { label: 'Brief Report (< 4k words)', words: 3500 },
+    { label: 'Standard Article (4k–10k words)', words: 6800 },
+    { label: 'Full Study (10k–15k words)', words: 11840 },
+    { label: 'Monograph (> 15k words)', words: 18500 },
   ];
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -145,10 +187,23 @@ export const HeroIntakeCard: React.FC<HeroIntakeCardProps> = ({
     onChangeWordCount(11840);
   };
 
+  const handleSelectGoal = (goal: typeof publishingGoals[0]) => {
+    onSelectHelp(goal.helpValue);
+    onSelectStage(goal.stageValue);
+  };
+
+  const handleApplyQuestions = () => {
+    setShowQuestions(false);
+    const recSection = document.getElementById('recommendation-section');
+    if (recSection) {
+      recSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="space-y-3">
       
-      {/* 1. TOP SEARCH SECTION (Matching user screenshot: "What do you need help with?") */}
+      {/* 1. TOP SEARCH SECTION ("What do you need help with?") */}
       <div className="space-y-1">
         <label className="text-xs sm:text-sm font-bold text-slate-900 block font-sans">
           What do you need help with?
@@ -156,70 +211,49 @@ export const HeroIntakeCard: React.FC<HeroIntakeCardProps> = ({
 
         <div className="relative" ref={searchDropdownRef}>
           <div className="relative flex items-center">
-            {/* Blue search icon exactly as in screenshot */}
             <Search className="w-4 h-4 text-[#0052CC] absolute left-3.5 pointer-events-none stroke-[2.2]" />
-            
             <input
               type="text"
               value={searchQuery}
-              onFocus={() => setIsSearchOpen(true)}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 setIsSearchOpen(true);
               }}
-              placeholder="Search editing, journals, formatting, figures..."
-              className="w-full h-10 sm:h-11 pl-10 pr-9 bg-white border border-slate-200 hover:border-slate-300 focus:border-[#0052CC] rounded-xl text-xs sm:text-sm placeholder:text-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/15 shadow-2xs transition-all"
+              onFocus={() => setIsSearchOpen(true)}
+              placeholder="Search services, e.g. English editing, journal selection, formatting, graphical abstract..."
+              className="w-full pl-10 pr-4 py-2 sm:py-2.5 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:border-[#0052CC] transition-all shadow-2xs"
             />
-
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3.5 text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
           </div>
 
-          {/* Search Dropdown / Recommender */}
+          {/* Search Dropdown / Autocomplete */}
           {isSearchOpen && (
-            <div className="absolute left-0 right-0 mt-1.5 bg-white rounded-xl shadow-xl border border-slate-200 p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-              <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                <span className="flex items-center gap-1.5 text-[#0052CC]">
-                  <Sparkles className="w-3 h-3" />
-                  <span>Search Suggestions</span>
-                </span>
-                <span>{filteredSuggestions.length} available</span>
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-2 text-xs divide-y divide-slate-100 max-h-72 overflow-y-auto">
+              <div className="p-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                {searchQuery.trim() === '' ? 'Popular Services' : `Matching Services (${filteredSuggestions.length})`}
               </div>
-
-              <div className="mt-1.5 space-y-1">
+              <div className="py-1">
                 {filteredSuggestions.map((item, idx) => (
-                  <div
+                  <button
                     key={idx}
+                    type="button"
                     onClick={() => {
                       onSelectServiceFromSearch(item.title);
                       setIsSearchOpen(false);
                       setSearchQuery('');
                     }}
-                    className="p-2 rounded-lg hover:bg-blue-50/70 border border-transparent hover:border-blue-100 cursor-pointer transition-all flex items-center justify-between group"
+                    className="w-full text-left p-2 rounded-lg hover:bg-blue-50/70 flex items-start justify-between gap-3 group transition-colors"
                   >
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900 group-hover:text-[#0052CC]">
-                          {item.title}
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-medium px-1.5 py-0.2 bg-slate-100 rounded">
+                      <div className="font-semibold text-slate-900 group-hover:text-[#0052CC] flex items-center gap-1.5">
+                        <span>{item.title}</span>
+                        <span className="text-[10px] px-1.5 py-0.2 bg-slate-100 group-hover:bg-blue-100 text-slate-600 group-hover:text-[#0052CC] rounded font-normal">
                           {item.cat}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        {item.desc}
-                      </p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">{item.desc}</p>
                     </div>
-
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#0052CC] group-hover:translate-x-0.5 transition-all" />
-                  </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#0052CC] mt-1 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                  </button>
                 ))}
               </div>
             </div>
@@ -227,26 +261,9 @@ export const HeroIntakeCard: React.FC<HeroIntakeCardProps> = ({
         </div>
       </div>
 
-      {/* 2. PERSONALIZED START CARD (Exact layout matching the user's uploaded screenshot) */}
+      {/* 2. DUAL BANNER: [ UPLOAD YOUR MANUSCRIPT ] | [ NOT READY TO UPLOAD? ] */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
         
-        {/* Card Header matching screenshot */}
-        <div className="px-4 sm:px-5 py-2.5 sm:py-3 bg-[#F8FAFD] border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-          <div>
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#0052CC] block">
-              PERSONALIZED START
-            </span>
-            <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 font-sans mt-0.5">
-              Where are you in your publication journey?
-            </h2>
-          </div>
-
-          <div className="text-xs text-slate-500 font-normal">
-            Choose how you'd like to begin
-          </div>
-        </div>
-
-        {/* Card Body - 2 Columns (Upload manuscript vs Not ready to upload) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-150">
           
           {/* Left Column: Upload your manuscript */}
@@ -259,7 +276,6 @@ export const HeroIntakeCard: React.FC<HeroIntakeCardProps> = ({
             }`}
           >
             <div>
-              {/* Blue icon container exactly as in screenshot */}
               <div className="w-8 h-8 rounded-lg bg-[#EBF3FC] text-[#0052CC] flex items-center justify-center mb-2.5">
                 <UploadCloud className="w-4 h-4 stroke-[2.2]" />
               </div>
@@ -322,7 +338,6 @@ export const HeroIntakeCard: React.FC<HeroIntakeCardProps> = ({
           {/* Right Column: Not ready to upload? */}
           <div className="p-4 sm:p-5 flex flex-col justify-between bg-white">
             <div>
-              {/* Green speech bubble icon exactly as in screenshot */}
               <div className="w-8 h-8 rounded-lg bg-[#E8F6ED] text-[#16A34A] flex items-center justify-center mb-2.5">
                 <MessageSquare className="w-4 h-4 stroke-[2.2]" />
               </div>
@@ -332,7 +347,7 @@ export const HeroIntakeCard: React.FC<HeroIntakeCardProps> = ({
               </h3>
 
               <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                Answer a few questions about your goals and get recommendations without a document.
+                Answer 2 quick questions to get apt service recommendations without a document.
               </p>
             </div>
 
@@ -340,26 +355,30 @@ export const HeroIntakeCard: React.FC<HeroIntakeCardProps> = ({
               <button
                 type="button"
                 onClick={() => setShowQuestions(!showQuestions)}
-                className="px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 text-xs font-medium rounded-lg shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
+                className={`px-4 py-2 border text-xs font-semibold rounded-lg shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                  showQuestions
+                    ? 'bg-blue-50 border-[#0052CC] text-[#0052CC]'
+                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800'
+                }`}
               >
-                <span>Continue without uploading</span>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-600 stroke-[2]" />
+                <span>{showQuestions ? 'Close questions' : 'Continue without uploading'}</span>
+                <ArrowRight className="w-3.5 h-3.5 stroke-[2]" />
               </button>
             </div>
           </div>
 
         </div>
 
-        {/* EXPANDABLE QUESTIONS ACCORDION (If user clicks "Continue without uploading") */}
+        {/* STREAMLINED "NOT READY TO UPLOAD" (REDUCED TO 2 QUESTIONS & APT SUGGESTIONS) */}
         {showQuestions && (
-          <div className="border-t border-slate-200 bg-slate-50/60 p-6 sm:p-8 animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="max-w-4xl space-y-6">
+          <div className="border-t border-slate-200 bg-slate-50/70 p-4 sm:p-6 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="max-w-4xl space-y-4">
               
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-200">
                 <div className="flex items-center gap-2">
                   <Sliders className="w-4 h-4 text-[#0052CC]" />
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                    Quick Publication Assessment (3 Questions)
+                    Quick Publication Assessment (2 Questions)
                   </span>
                 </div>
                 <button
@@ -371,128 +390,110 @@ export const HeroIntakeCard: React.FC<HeroIntakeCardProps> = ({
                 </button>
               </div>
 
-              {/* Question 1: Stage */}
+              {/* QUESTION 1: Primary Publishing Priority (4 Apt Goal Cards) */}
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-2">
-                  1. Where is your paper right now?
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-800 block mb-2">
+                  1. What is your primary publishing priority?
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                  {stages.map((stg) => (
-                    <button
-                      key={stg.id}
-                      type="button"
-                      onClick={() => onSelectStage(stg.id)}
-                      className={`p-3 rounded-lg border text-left transition-all flex flex-col justify-between ${
-                        selectedStage === stg.id
-                          ? 'border-[#0052CC] bg-[#0052CC] text-white shadow-2xs font-bold'
-                          : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <div className="text-xs">{stg.label}</div>
-                      <div className={`text-[10px] mt-1 ${selectedStage === stg.id ? 'text-blue-100' : 'text-slate-400'}`}>
-                        {stg.desc}
-                      </div>
-                    </button>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                  {publishingGoals.map((goal) => {
+                    const isSelected = currentGoal.id === goal.id;
+                    return (
+                      <button
+                        key={goal.id}
+                        type="button"
+                        onClick={() => handleSelectGoal(goal)}
+                        className={`p-3 rounded-lg border text-left transition-all flex flex-col justify-between ${
+                          isSelected
+                            ? 'border-[#0052CC] bg-blue-50/60 ring-2 ring-[#0052CC]/80 shadow-2xs'
+                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="text-xs font-bold text-slate-900">
+                              {goal.title}
+                            </span>
+                            <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded shrink-0 ${
+                              isSelected
+                                ? 'bg-[#0052CC] text-white'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {goal.tag}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 leading-snug">
+                            {goal.desc}
+                          </p>
+                        </div>
+
+                        <div className="mt-2.5 pt-1.5 border-t border-slate-150 flex items-center justify-between text-[10px]">
+                          <span className="text-slate-400">Apt service:</span>
+                          <span className={`font-semibold ${isSelected ? 'text-[#0052CC]' : 'text-slate-700'}`}>
+                            {goal.aptService}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Question 2: Help Needed */}
+              {/* QUESTION 2: Estimated Scope & Length */}
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-2">
-                  2. What would you most like help with?
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-800 block mb-2">
+                  2. What is your paper's estimated scope & word count?
                 </label>
-                <div className="flex flex-wrap gap-2">
-                  {helpGoals.map((goal) => (
-                    <button
-                      key={goal}
-                      type="button"
-                      onClick={() => onSelectHelp(goal)}
-                      className={`py-1.5 px-3 rounded-lg text-xs font-medium border transition-colors ${
-                        selectedHelp === goal
-                          ? 'border-[#0052CC] bg-blue-50 text-[#0052CC] font-bold'
-                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                      }`}
-                    >
-                      {goal}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {scopePills.map((scope) => {
+                    const isSelected = Math.abs(wordCount - scope.words) < 2000;
+                    return (
+                      <button
+                        key={scope.label}
+                        type="button"
+                        onClick={() => onChangeWordCount(scope.words)}
+                        className={`p-2.5 rounded-lg border text-left text-xs transition-all flex items-center justify-between ${
+                          isSelected
+                            ? 'border-[#0052CC] bg-white ring-1 ring-[#0052CC] font-bold text-[#0052CC]'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                        }`}
+                      >
+                        <span className="truncate">{scope.label}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#0052CC] shrink-0 ml-1" />}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Question 3: Word count & Turnaround */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div>
-                  <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1.5">
-                    <span>Approximate Word Count:</span>
-                    <span className="text-[#0052CC] font-bold font-tabular">{wordCount.toLocaleString()} words</span>
+              {/* APT SUGGESTION HIGHLIGHT BOX (Live, intelligent matching) */}
+              <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-50/80 to-indigo-50/60 border border-[#0052CC]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-[#0052CC] text-white flex items-center justify-center shrink-0 mt-0.5">
+                    <Sparkles className="w-3.5 h-3.5" />
                   </div>
-                  <input
-                    type="range"
-                    min="1000"
-                    max="25000"
-                    step="500"
-                    value={wordCount}
-                    onChange={(e) => onChangeWordCount(Number(e.target.value))}
-                    className="w-full accent-[#0052CC] h-2 bg-slate-200 rounded-lg cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[10px] text-slate-400 font-tabular mt-1">
-                    <span>1,000w</span>
-                    <span>12,000w</span>
-                    <span>25,000w</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-900">
+                        Apt Recommendation: {currentGoal.aptService}
+                      </span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
+                        High Fit
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                      {currentGoal.aptRationale}
+                    </p>
                   </div>
                 </div>
 
-                <div>
-                  <span className="text-xs font-semibold text-slate-700 block mb-1.5">
-                    Required Turnaround Speed:
-                  </span>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => onChangeSpeed('standard')}
-                      className={`py-2 rounded-lg border text-center font-medium transition-all ${
-                        speed === 'standard' ? 'bg-[#0052CC] text-white border-[#0052CC] font-bold' : 'bg-white border-slate-200 text-slate-700'
-                      }`}
-                    >
-                      <div>5 Days</div>
-                      <div className={`text-[10px] ${speed === 'standard' ? 'text-blue-100' : 'text-slate-400'}`}>Standard</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onChangeSpeed('express')}
-                      className={`py-2 rounded-lg border text-center font-medium transition-all ${
-                        speed === 'express' ? 'bg-[#0052CC] text-white border-[#0052CC] font-bold' : 'bg-white border-slate-200 text-slate-700'
-                      }`}
-                    >
-                      <div>3 Days</div>
-                      <div className={`text-[10px] ${speed === 'express' ? 'text-blue-100' : 'text-slate-400'}`}>Express</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onChangeSpeed('urgent')}
-                      className={`py-2 rounded-lg border text-center font-medium transition-all ${
-                        speed === 'urgent' ? 'bg-[#0052CC] text-white border-[#0052CC] font-bold' : 'bg-white border-slate-200 text-slate-700'
-                      }`}
-                    >
-                      <div>24h</div>
-                      <div className={`text-[10px] ${speed === 'urgent' ? 'text-blue-100' : 'text-slate-400'}`}>Urgent</div>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs">
-                <span className="text-emerald-700 font-semibold flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Recommendations below updated based on your selections</span>
-                </span>
                 <button
                   type="button"
-                  onClick={() => setShowQuestions(false)}
-                  className="px-4 py-2 bg-[#0052CC] text-white font-semibold rounded-lg text-xs"
+                  onClick={handleApplyQuestions}
+                  className="w-full sm:w-auto px-4 py-2 bg-[#0052CC] hover:bg-[#0047B3] active:bg-[#003B94] text-white text-xs font-bold rounded-lg shadow-xs flex items-center justify-center gap-1.5 shrink-0 transition-all cursor-pointer"
                 >
-                  View Recommendations ↓
+                  <span>Apply & View Recommendation</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 

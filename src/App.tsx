@@ -189,18 +189,21 @@ export default function App() {
             }}
           />
 
-          {/* 2. DYNAMIC PERSONALIZED RECOMMENDATION & SUGGESTED ADD-ONS */}
-          <RecommendationResult
-            currentState={currentState}
-            selectedStage={selectedStage}
-            selectedHelp={selectedHelp}
-            wordCount={wordCount}
-            speed={speed}
-            addons={addons}
-            onToggleAddon={handleToggleAddon}
-            onOpenQuote={handleOpenQuote}
-            onOpenWhyRecommended={handleOpenWhyRecommended}
-          />
+          {/* 2. DYNAMIC PERSONALIZED RECOMMENDATION & COMPLETE SUBMISSION PACKAGE */}
+          <div id="recommendation-section">
+            <RecommendationResult
+              currentState={currentState}
+              activeManuscript={activeManuscript}
+              selectedStage={selectedStage}
+              selectedHelp={selectedHelp}
+              wordCount={wordCount}
+              speed={speed}
+              addons={addons}
+              onToggleAddon={handleToggleAddon}
+              onOpenQuote={handleOpenQuote}
+              onOpenWhyRecommended={handleOpenWhyRecommended}
+            />
+          </div>
 
           {/* 3. QUICK STATS SUMMARY (Positioned under recommendation) */}
           <DashboardStatsBar
@@ -322,6 +325,8 @@ export default function App() {
         onClose={() => setIsQuoteOpen(false)}
         serviceId={quoteServiceId}
         initialWordCount={activeManuscript?.wordCount || wordCount}
+        activeManuscript={activeManuscript}
+        onUploadManuscript={handleUploadFile}
       />
 
       <WhyRecommendedModal
